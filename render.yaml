@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: day12-ai-agent
+    runtime: docker
+    region: singapore
+    plan: free
+    rootDir: 06-lab-complete
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: APP_VERSION
+        value: "1.0.0"
+      - key: AGENT_API_KEY
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: MONTHLY_BUDGET_USD
+        value: "10.0"
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "10"
