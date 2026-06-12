@@ -22,6 +22,7 @@ from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Depends, Request, Response
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
@@ -31,6 +32,7 @@ from app.auth import verify_api_key
 from app.cost_guard import check_and_record_cost, get_monthly_cost
 from app.rate_limiter import check_rate_limit
 from app.storage import append_history, get_history, redis_ready
+from app.ui import UI_HTML
 
 # Mock LLM (thay bằng OpenAI/Anthropic khi có API key)
 from utils.mock_llm import ask as llm_ask
@@ -142,18 +144,9 @@ class AskResponse(BaseModel):
 # Endpoints
 # ─────────────────────────────────────────────────────────
 
-@app.get("/", tags=["Info"])
+@app.get("/", response_class=HTMLResponse, tags=["Info"])
 def root():
-    return {
-        "app": settings.app_name,
-        "version": settings.app_version,
-        "environment": settings.environment,
-        "endpoints": {
-            "ask": "POST /ask (requires X-API-Key)",
-            "health": "GET /health",
-            "ready": "GET /ready",
-        },
-    }
+    return UI_HTML
 
 
 @app.post("/ask", response_model=AskResponse, tags=["Agent"])

@@ -24,6 +24,9 @@ class ProductionAgentTests(unittest.TestCase):
         self.client.__exit__(None, None, None)
 
     def test_health_and_readiness(self):
+        root = self.client.get("/")
+        self.assertEqual(root.status_code, 200)
+        self.assertIn("Production AI Agent", root.text)
         self.assertEqual(self.client.get("/health").status_code, 200)
         self.assertEqual(self.client.get("/ready").status_code, 200)
 
