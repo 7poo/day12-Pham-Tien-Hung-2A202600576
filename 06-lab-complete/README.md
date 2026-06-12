@@ -1,100 +1,64 @@
-# Lab 12 — Complete Production Agent
+# Lab 12 Complete Production Agent
 
-Kết hợp TẤT CẢ những gì đã học trong 1 project hoàn chỉnh.
+Production-ready FastAPI agent with Redis-backed conversation history, per-user rate limiting,
+and per-user monthly cost protection.
 
-## Checklist Deliverable
+## Requirements Covered
 
-- [x] Dockerfile (multi-stage, < 500 MB)
-- [x] docker-compose.yml (agent + redis)
-- [x] .dockerignore
-- [x] Health check endpoint (`GET /health`)
-- [x] Readiness endpoint (`GET /ready`)
-- [x] API Key authentication
-- [x] Rate limiting
-- [x] Cost guard
-- [x] Config từ environment variables
-- [x] Structured logging
-- [x] Graceful shutdown
-- [x] Public URL ready (Railway / Render config)
+- Multi-stage Docker image under 500 MB
+- Configuration from environment variables
+- API key authentication
+- Sliding-window rate limit: 10 requests/minute per user
+- Cost guard: USD 10/month per user
+- Redis-backed conversation history
+- Health and readiness probes
+- Graceful shutdown and structured JSON logs
+- Railway and Render deployment configuration
 
----
+## Architecture
 
-## Cấu Trúc
-
-```
-06-lab-complete/
-├── app/
-│   ├── main.py         # Entry point — kết hợp tất cả
-│   ├── config.py       # 12-factor config
-│   ├── auth.py         # API Key + JWT
-│   ├── rate_limiter.py # Rate limiting
-│   └── cost_guard.py   # Budget protection
-├── Dockerfile          # Multi-stage, production-ready
-├── docker-compose.yml  # Full stack
-├── railway.toml        # Deploy Railway
-├── render.yaml         # Deploy Render
-├── .env.example        # Template
-├── .dockerignore
-└── requirements.txt
+```mermaid
+flowchart LR
+    Client -->|X-API-Key| Agent[FastAPI Agent]
+    Agent --> MockLLM[Mock LLM]
+    Agent --> Redis[(Redis)]
+    Redis --> History[Conversation History]
+    Redis --> Rate[Rate Limit Windows]
+    Redis --> Cost[Monthly User Cost]
 ```
 
----
-
-## Chạy Local
+## Run Locally
 
 ```bash
-# 1. Setup
-cp .env.example .env
-
-# 2. Chạy với Docker Compose
-docker compose up
-
-# 3. Test
-curl http://localhost/health
-
-# 4. Lấy API key từ .env, test endpoint
-API_KEY=$(grep AGENT_API_KEY .env | cut -d= -f2)
-curl -H "X-API-Key: $API_KEY" \
-     -X POST http://localhost/ask \
-     -H "Content-Type: application/json" \
-     -d '{"question": "What is deployment?"}'
+docker compose up --build -d
+curl http://localhost:8000/health
+curl http://localhost:8000/ready
+curl -X POST http://localhost:8000/ask \
+  -H "X-API-Key: dev-key-change-me" \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":"alice","question":"Hello"}'
 ```
 
----
+The optional `.env.local` file can override values from `.env.example`.
 
-## Deploy Railway (< 5 phút)
-
-```bash
-# Cài Railway CLI
-npm i -g @railway/cli
-
-# Login và deploy
-railway login
-railway init
-railway variables set OPENAI_API_KEY=sk-...
-railway variables set AGENT_API_KEY=your-secret-key
-railway up
-
-# Nhận public URL!
-railway domain
-```
-
----
-
-## Deploy Render
-
-1. Push repo lên GitHub
-2. Render Dashboard → New → Blueprint
-3. Connect repo → Render đọc `render.yaml`
-4. Set secrets: `OPENAI_API_KEY`, `AGENT_API_KEY`
-5. Deploy → Nhận URL!
-
----
-
-## Kiểm Tra Production Readiness
+## Tests
 
 ```bash
+python -m unittest -v test_app.py
 python check_production_ready.py
+docker compose config --quiet
 ```
 
-Script này kiểm tra tất cả items trong checklist và báo cáo những gì còn thiếu.
+## API
+
+- `POST /ask`: authenticated agent request with `user_id` and `question`
+- `GET /history/{user_id}`: authenticated conversation history
+- `GET /health`: public liveness probe
+- `GET /ready`: public readiness probe
+- `GET /metrics?user_id=alice`: authenticated usage metrics
+- `/docs`: OpenAPI documentation outside production
+
+## Production Variables
+
+Set `ENVIRONMENT=production`, `AGENT_API_KEY`, `JWT_SECRET`, and `REDIS_URL`. Optional settings
+include `RATE_LIMIT_PER_MINUTE`, `MONTHLY_BUDGET_USD`, `ALLOWED_ORIGINS`, and `OPENAI_API_KEY`.

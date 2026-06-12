@@ -32,7 +32,7 @@ app = FastAPI(title="Agent with API Key Auth")
 # ──────────────────────────────────────
 # API Key setup
 # ──────────────────────────────────────
-API_KEY = os.getenv("AGENT_API_KEY", "demo-key-change-in-production")
+API_KEY = os.getenv("AGENT_API_KEY", "secret-key-123")
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 

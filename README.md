@@ -1,5 +1,14 @@
 # Day 12 — Deployment: Đưa Agent Lên Cloud
 
+## Student Submission
+
+- Final production project: [`06-lab-complete/`](06-lab-complete/)
+- Mission answers: [`MISSION_ANSWERS.md`](MISSION_ANSWERS.md)
+- Deployment status: [`DEPLOYMENT.md`](DEPLOYMENT.md)
+
+Local implementation and verification are complete. Public cloud URL and deployment-dashboard
+screenshots still require an authenticated Railway, Render, or GCP account.
+
 > **AICB-P1 · VinUniversity 2026**  
 > Repository thực hành đi kèm bài giảng Day 12.  
 > Mỗi phần có ví dụ **cơ bản** (hiểu concept) và **chuyên sâu** (production-ready).

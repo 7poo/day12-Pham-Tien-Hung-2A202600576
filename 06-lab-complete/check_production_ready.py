@@ -11,6 +11,9 @@ import sys
 import json
 import subprocess
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(errors="replace")
+
 
 def check(name: str, passed: bool, detail: str = "") -> dict:
     icon = "✅" if passed else "❌"
@@ -38,6 +41,11 @@ def run_checks():
                          os.path.exists(os.path.join(base, ".env.example"))))
     results.append(check("requirements.txt exists",
                          os.path.exists(os.path.join(base, "requirements.txt"))))
+    for module in ["auth.py", "rate_limiter.py", "cost_guard.py"]:
+        results.append(check(
+            f"app/{module} exists",
+            os.path.exists(os.path.join(base, "app", module)),
+        ))
     results.append(check("railway.toml or render.yaml exists",
                          os.path.exists(os.path.join(base, "railway.toml")) or
                          os.path.exists(os.path.join(base, "render.yaml"))))
@@ -88,9 +96,21 @@ def run_checks():
         results.append(check("Rate limiting implemented",
                              "rate_limit" in content.lower() or "429" in content))
         results.append(check("Graceful shutdown (SIGTERM)",
-                             "SIGTERM" in content))
+                             "timeout_graceful_shutdown" in content and '"shutdown"' in content))
         results.append(check("Structured logging (JSON)",
                              "json.dumps" in content or '"event"' in content))
+        results.append(check("Redis-backed shared state",
+                             "redis_ready" in content))
+        results.append(check("Conversation history implemented",
+                             "get_history" in content and "append_history" in content))
+
+    config_py = os.path.join(base, "app", "config.py")
+    if os.path.exists(config_py):
+        config_content = open(config_py).read()
+        results.append(check("Rate limit defaults to 10 req/min",
+                             'RATE_LIMIT_PER_MINUTE", "10"' in config_content))
+        results.append(check("Cost guard defaults to $10/month",
+                             'MONTHLY_BUDGET_USD", "10.0"' in config_content))
     else:
         results.append(check("app/main.py exists", False, "Create app/main.py!"))
 
